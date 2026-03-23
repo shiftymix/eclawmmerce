@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "./supabase/server";
-import { assessTool } from "./anthropic";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -34,10 +33,14 @@ Return ONLY a valid JSON array with fields:
 
 Return 5–20 genuinely new entries only.`;
 
+/**
+ * Discovery-only: web search, parse, dedup, insert as pending.
+ * No LLM assessments — those are handled by runPendingAssessments().
+ */
 export async function runDiscovery() {
   const supabase = createServiceClient();
 
-  // Step 1: Multi-turn conversation with web search to find new entries
+  // Multi-turn conversation with web search
   const messages: Anthropic.MessageParam[] = [
     { role: "user", content: DISCOVERY_PROMPT },
   ];
@@ -65,29 +68,20 @@ export async function runDiscovery() {
 
     console.log(`[Discovery] stop_reason: ${response.stop_reason}, blocks: ${response.content.length}`);
 
-    // Collect all text from this response
     const textBlocks = response.content.filter((b) => b.type === "text");
     const turnText = textBlocks.map((b) => (b as Anthropic.TextBlock).text).join("");
     allText += turnText;
 
-    // If the model stopped normally (not mid-tool-use), we're done
     if (response.stop_reason === "end_turn") {
       console.log(`[Discovery] Completed after ${turns} turns`);
       break;
     }
 
-    // If there's a tool_use block, we need to continue the conversation
-    // Add the assistant response and a user turn to continue
     messages.push({ role: "assistant", content: response.content });
 
-    // For web_search, the SDK handles results automatically via server_tool_use
-    // We just need to send back tool results for any tool_use blocks
     const toolUseBlocks = response.content.filter((b) => b.type === "tool_use");
     if (toolUseBlocks.length === 0) break;
 
-    // The web_search tool results come back automatically in the API response
-    // For the extended thinking / web search flow, results are inline
-    // Just continue with an empty user message to prompt completion
     const toolResults: Anthropic.ToolResultBlockParam[] = toolUseBlocks.map((b) => ({
       type: "tool_result" as const,
       tool_use_id: (b as Anthropic.ToolUseBlock).id,
@@ -98,9 +92,6 @@ export async function runDiscovery() {
   }
 
   console.log(`[Discovery] Total text length: ${allText.length}`);
-  if (allText.length > 0) {
-    console.log(`[Discovery] Text preview: ${allText.substring(0, 500)}...`);
-  }
 
   let discoveredEntries: Array<{
     name: string;
@@ -116,11 +107,10 @@ export async function runDiscovery() {
 
   try {
     const clean = allText.replace(/```json|```/g, "").trim();
-    // Find the JSON array in the response
     const match = clean.match(/\[[\s\S]*\]/);
     if (match) {
       discoveredEntries = JSON.parse(match[0]);
-      // Strip citation tags from descriptions (e.g. <cite index="...">)
+      // Strip citation tags from descriptions
       discoveredEntries = discoveredEntries.map((e) => ({
         ...e,
         description: e.description.replace(/<\/?cite[^>]*>/g, "").trim(),
@@ -137,7 +127,7 @@ export async function runDiscovery() {
 
   let added = 0;
 
-  // Step 2: For each entry, check if it exists, resolve parent, insert, then assess
+  // Insert entries as 'pending' — no assessment here
   for (const entry of discoveredEntries) {
     console.log(`[Discovery] Processing: ${entry.name} (${entry.entry_type})`);
 
@@ -168,7 +158,7 @@ export async function runDiscovery() {
       }
     }
 
-    const { data: inserted, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from("tools")
       .insert({
         name: entry.name,
@@ -181,37 +171,16 @@ export async function runDiscovery() {
         entry_type: entry.entry_type || "tool",
         parent_id,
         release_date: entry.release_date || null,
-      })
-      .select("id")
-      .single();
+        status: "pending",
+      });
 
-    if (insertError || !inserted) {
-      console.error(`[Discovery]   -> Insert failed:`, insertError?.message);
+    if (insertError) {
+      console.error(`[Discovery]   -> Insert failed:`, insertError.message);
       continue;
     }
 
-    // Step 3: Run LLM assessment
-    try {
-      const assessments = await assessTool({
-        name: entry.name,
-        url: entry.url,
-        description: entry.description,
-        entry_type: entry.entry_type,
-      });
-
-      const rows = assessments.map((a) => ({
-        tool_id: inserted.id,
-        use_case_id: a.use_case_id,
-        score: a.score,
-        reasoning: a.reasoning,
-      }));
-
-      await supabase.from("llm_assessments").insert(rows);
-      added++;
-      console.log(`[Discovery]   -> Assessed and added!`);
-    } catch (e) {
-      console.error(`[Discovery]   -> Assessment failed:`, e);
-    }
+    added++;
+    console.log(`[Discovery]   -> Inserted as pending`);
   }
 
   console.log(`[Discovery] Done! Found: ${discoveredEntries.length}, Added: ${added}`);
