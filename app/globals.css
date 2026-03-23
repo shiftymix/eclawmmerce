@@ -1,27 +1,132 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    @apply bg-bg text-text-primary font-mono;
+  }
+
+  /* Force all border-radius to max 4px */
+  * {
+    border-radius: 4px;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .pixel-border {
+    border: 2px solid #2e3450;
+  }
+
+  .pixel-border-red {
+    border: 2px solid #e8392e;
+  }
+
+  .scanline-overlay {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
+  }
+
+  .pixel-card {
+    @apply bg-surface pixel-border transition-all duration-200;
+  }
+
+  .pixel-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 1px rgba(232, 57, 46, 0.13);
+    border-color: #e8392e;
+  }
+
+  .btn-primary {
+    @apply bg-crab-red text-white font-mono font-bold px-4 py-2 text-sm
+      hover:brightness-110 transition-all duration-150 active:translate-y-px;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-crab-red font-mono font-bold px-4 py-2 text-sm
+      pixel-border-red hover:bg-crab-red hover:text-white transition-all duration-150;
+  }
+
+  .score-amber {
+    @apply text-amber;
+  }
+
+  .score-teal {
+    @apply text-success;
+  }
+
+  /* Loading spinner in crab-red */
+  .spinner {
+    @apply inline-block w-5 h-5 border-2 border-crab-red border-t-transparent animate-spin;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  .font-pixel-xs {
+    font-family: "Press Start 2P", cursive;
+    font-size: 9px;
+    line-height: 1.6;
+  }
+
+  .font-pixel-sm {
+    font-family: "Press Start 2P", cursive;
+    font-size: 10px;
+    line-height: 1.6;
+  }
+
+  .font-pixel-md {
+    font-family: "Press Start 2P", cursive;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .font-pixel-lg {
+    font-family: "Press Start 2P", cursive;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .font-pixel-xl {
+    font-family: "Press Start 2P", cursive;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .image-pixelated {
+    image-rendering: pixelated;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1f2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2e3450;
+  border: 1px solid #1a1f2e;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e8392e;
 }
