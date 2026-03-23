@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response("Unauthorized", { status: 401 });
