@@ -88,6 +88,25 @@ export default function EntryCard({
         {tool.description}
       </p>
 
+      {/* Repo metadata badges */}
+      {tool.entry_type === "repo" && (tool.stars != null || tool.language) && (
+        <div className="flex gap-2">
+          {tool.stars != null && (
+            <span className="text-[10px] font-mono text-text-secondary px-1.5 py-0.5 pixel-border">
+              ⭐ {tool.stars.toLocaleString()}
+            </span>
+          )}
+          {tool.language && (
+            <span
+              className="text-[10px] font-mono px-1.5 py-0.5"
+              style={{ border: "1px solid #2ea44f", color: "#2ea44f" }}
+            >
+              {tool.language}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Category tags + scores in a row for feed layout */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex flex-wrap gap-1">

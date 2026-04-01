@@ -6,7 +6,7 @@ export interface UseCase {
   icon: string;
 }
 
-export type EntryType = "tool" | "feature" | "update" | "indie";
+export type EntryType = "tool" | "feature" | "update" | "indie" | "repo";
 
 export const ENTRY_TYPE_CONFIG: Record<
   EntryType,
@@ -16,6 +16,7 @@ export const ENTRY_TYPE_CONFIG: Record<
   feature: { label: "FEATURE", color: "#43c59e" },
   update: { label: "UPDATE", color: "#ff9f43" },
   indie: { label: "INDIE", color: "#9b59b6" },
+  repo: { label: "REPO", color: "#2ea44f" },
 };
 
 export interface Tool {
@@ -36,6 +37,10 @@ export interface Tool {
   entry_type: EntryType;
   parent_id: string | null;
   release_date: string | null;
+  // Repo-specific fields
+  stars: number | null;
+  language: string | null;
+  last_commit_date: string | null;
 }
 
 // Alias for readability in new code

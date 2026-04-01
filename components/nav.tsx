@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import PixelLogo from "./pixel-logo";
@@ -13,6 +13,7 @@ export default function Nav() {
   const [authMessage, setAuthMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const authDropdownRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -28,6 +29,17 @@ export default function Nav() {
 
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
+
+  useEffect(() => {
+    if (!showAuth) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (authDropdownRef.current && !authDropdownRef.current.contains(e.target as Node)) {
+        setShowAuth(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showAuth]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +157,7 @@ export default function Nav() {
 
       {/* Auth dropdown */}
       {showAuth && !user && (
-        <div className="absolute top-14 right-4 bg-surface pixel-border p-4 z-50 w-80">
+        <div ref={authDropdownRef} className="absolute top-14 right-4 bg-surface pixel-border p-4 z-50 w-80">
           <p className="text-xs font-mono text-text-secondary mb-3">
             Sign in with magic link (no password)
           </p>
