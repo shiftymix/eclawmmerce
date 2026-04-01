@@ -6,7 +6,7 @@ export interface UseCase {
   icon: string;
 }
 
-export type EntryType = "tool" | "feature" | "update" | "indie" | "repo";
+export type EntryType = "tool" | "feature" | "update" | "indie" | "repo" | "skill";
 
 export const ENTRY_TYPE_CONFIG: Record<
   EntryType,
@@ -17,6 +17,7 @@ export const ENTRY_TYPE_CONFIG: Record<
   update: { label: "UPDATE", color: "#ff9f43" },
   indie: { label: "INDIE", color: "#9b59b6" },
   repo: { label: "REPO", color: "#2ea44f" },
+  skill: { label: "SKILL", color: "#6366f1" },
 };
 
 export interface Tool {
@@ -41,6 +42,9 @@ export interface Tool {
   stars: number | null;
   language: string | null;
   last_commit_date: string | null;
+  // Skill-specific fields
+  skill_runtime?: string | null;
+  skill_install_cmd?: string | null;
 }
 
 // Alias for readability in new code

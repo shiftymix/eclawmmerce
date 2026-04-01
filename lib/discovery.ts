@@ -3,7 +3,7 @@ import { createServiceClient } from "./supabase/server";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-export type DiscoverySourceGroup = "launches" | "social" | "platforms" | "all";
+export type DiscoverySourceGroup = "launches" | "social" | "platforms" | "skills" | "all";
 
 const COMMON_SCHEMA = `Return ONLY a valid JSON array with fields:
 - name: string
@@ -12,12 +12,14 @@ const COMMON_SCHEMA = `Return ONLY a valid JSON array with fields:
 - description: string (1-2 sentences)
 - is_open_source: boolean
 - pricing_model: "free" | "freemium" | "paid" | "open-source"
-- entry_type: "tool" | "feature" | "update" | "indie" | "repo"
+- entry_type: "tool" | "feature" | "update" | "indie" | "repo" | "skill"
 - parent_name: string | null (name of the parent tool/platform, if this is a feature release or update)
 - release_date: string | null (ISO date if known)
 - stars: number | null (GitHub star count, only for repo entries)
 - language: string | null (primary programming language, only for repo entries)
 - last_commit_date: string | null (ISO date of last commit, only for repo entries)
+- skill_runtime: "mcp" | "cli" | "openclaw" | "openai" | "other" | null (runtime type, only for skill entries)
+- skill_install_cmd: string | null (install command e.g. "npx @foo/bar", only for skill entries)
 
 Return 5–20 genuinely new entries only.`;
 
@@ -55,6 +57,20 @@ Find ALL of the following:
 1. **Feature releases**: Major new features or capabilities launched by existing AI/ecommerce platforms (e.g., a new AI agent mode, a new integration, a new API endpoint).
 2. **Platform updates**: Significant updates from major platforms that change capabilities for ecommerce builders.
 3. **Open-source GitHub repos**: Actively maintained open-source repositories on GitHub that are useful to ecommerce builders (libraries, SDKs, automation scripts, integrations). Include star count, primary language, and last commit date when available.
+
+${COMMON_SCHEMA}`,
+
+  skills: `Search the web for MCP servers, Claude skills, and AI agent tools published in the past 14 days. Focus on SKILL DIRECTORIES and DEVELOPER COMMUNITIES:
+
+**Skill directories**: skillcrate.dev, clawhub.ai
+**GitHub topics**: search GitHub for repos tagged 'mcp-server' and 'claude-mcp'
+**npm registry**: @modelcontextprotocol/* packages, new MCP-related packages
+**Community**: Hacker News posts mentioning MCP or Claude tools, Reddit r/ClaudeAI, r/mcp
+
+Find MCP servers, CLI tools, OpenClaw skills, and other installable AI agent extensions. For each entry:
+- Set entry_type to "skill"
+- Set skill_runtime: "mcp" for Model Context Protocol servers, "cli" for command-line tools, "openclaw" for OpenClaw skills, "openai" for OpenAI plugin-compatible tools, "other" otherwise
+- Set skill_install_cmd when an install command is available (e.g. "npx @modelcontextprotocol/server-foo", "pip install foo-mcp")
 
 ${COMMON_SCHEMA}`,
 
@@ -149,12 +165,14 @@ export async function runDiscovery(sourceGroup: DiscoverySourceGroup = "all") {
     description: string;
     is_open_source: boolean;
     pricing_model: string;
-    entry_type: "tool" | "feature" | "update" | "indie" | "repo";
+    entry_type: "tool" | "feature" | "update" | "indie" | "repo" | "skill";
     parent_name: string | null;
     release_date: string | null;
     stars: number | null;
     language: string | null;
     last_commit_date: string | null;
+    skill_runtime: string | null;
+    skill_install_cmd: string | null;
   }> = [];
 
   try {
@@ -228,6 +246,11 @@ export async function runDiscovery(sourceGroup: DiscoverySourceGroup = "all") {
       insertData.stars = entry.stars ?? null;
       insertData.language = entry.language ?? null;
       insertData.last_commit_date = entry.last_commit_date ?? null;
+    }
+
+    if (entry.entry_type === "skill") {
+      insertData.skill_runtime = entry.skill_runtime ?? null;
+      insertData.skill_install_cmd = entry.skill_install_cmd ?? null;
     }
 
     const { error: insertError } = await supabase

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import ScoreBadge from "./score-badge";
 import {
@@ -46,6 +49,15 @@ export default function EntryCard({
 
   const typeConfig = ENTRY_TYPE_CONFIG[tool.entry_type as EntryType] || ENTRY_TYPE_CONFIG.tool;
 
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    if (!tool.skill_install_cmd) return;
+    navigator.clipboard.writeText(tool.skill_install_cmd);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   return (
     <div className="pixel-card p-4 flex flex-col gap-3">
       {/* Type badge + name row */}
@@ -87,6 +99,31 @@ export default function EntryCard({
       <p className="text-xs font-mono text-text-secondary line-clamp-2">
         {tool.description}
       </p>
+
+      {/* Skill metadata */}
+      {tool.entry_type === "skill" && (tool.skill_runtime || tool.skill_install_cmd) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {tool.skill_runtime && (
+            <span
+              className="text-[10px] font-mono px-1.5 py-0.5"
+              style={{ border: "1px solid #6366f1", color: "#6366f1" }}
+            >
+              {tool.skill_runtime.toUpperCase()}
+            </span>
+          )}
+          {tool.skill_install_cmd && (
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 transition-all"
+              style={{ border: "1px solid #2e3450", color: "#8892b0" }}
+              title={tool.skill_install_cmd}
+            >
+              <code className="truncate max-w-[160px]">{tool.skill_install_cmd}</code>
+              <span className="flex-shrink-0">{copied ? "✓" : "⧉"}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Repo metadata badges */}
       {tool.entry_type === "repo" && (tool.stars != null || tool.language) && (
