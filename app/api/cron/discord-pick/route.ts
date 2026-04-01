@@ -6,8 +6,7 @@ export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const DISCORD_WEBHOOK_URL =
-  "https://discordapp.com/api/webhooks/1483118190002442423/uikc7_USO-1W-OQToPfPNnuaZ2V28BHF8GwDeBfYh8A8wjKGA3_4jAZhiZsLlK3nj5Hf";
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL!;
 
 const PRICING_BADGE: Record<string, string> = {
   free: "FREE",
@@ -75,13 +74,7 @@ export async function GET(req: Request) {
     messages: [
       {
         role: "user",
-        content: `Write a 2-3 sentence blurb for an ecommerce operator audience about this tool. Be concise and practical — focus on the value for online sellers and ecom builders. No hype.
-
-Name: ${picked.name}
-Description: ${picked.description}
-URL: ${picked.url}
-
-Return only the blurb text, no quotes, no labels.`,
+        content: `Write a 2-3 sentence blurb for an ecommerce operator audience about this tool. Be concise and practical -- focus on the value for online sellers and ecom builders. No hype.\n\nName: ${picked.name}\nDescription: ${picked.description}\nURL: ${picked.url}\n\nReturn only the blurb text, no quotes, no labels.`,
       },
     ],
   });
@@ -93,18 +86,18 @@ Return only the blurb text, no quotes, no labels.`,
 
   const pricingBadge = PRICING_BADGE[picked.pricing_model] || picked.pricing_model?.toUpperCase();
 
-  const message = [
-    `🔍 **Today's pick from [eclawmmerce.ai](https://eclawmmerce.ai)**`,
-    `**${picked.name}** — ${pricingBadge}`,
+  const discordMessage = [
+    `\uD83D\uDD0D **Today's pick from [eclawmmerce.ai](https://eclawmmerce.ai)**`,
+    `**${picked.name}** -- ${pricingBadge}`,
     blurb,
-    `👉 <https://eclawmmerce.ai/tools/${picked.id}>`,
+    `\uD83D\uDC49 <https://eclawmmerce.ai/tools/${picked.id}>`,
   ].join("\n");
 
   // Post to Discord
   const discordRes = await fetch(DISCORD_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: message }),
+    body: JSON.stringify({ content: discordMessage }),
   });
 
   if (!discordRes.ok) {
