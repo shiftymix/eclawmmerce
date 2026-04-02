@@ -131,7 +131,7 @@ async function handleDiscover(query: string, interaction: Record<string, unknown
   });
 }
 
-// Discord may probe the endpoint with GET during verification
+// GET handler: Discord may probe endpoint during verification
 export async function GET() {
   return new Response("OK", { status: 200 });
 }
