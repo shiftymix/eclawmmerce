@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { ENTRY_TYPE_CONFIG } from "@/lib/supabase/types";
+import nacl from "tweetnacl";
 
 function createServiceClient() {
   return createSupabaseClient(
@@ -9,7 +10,6 @@ function createServiceClient() {
   );
 }
 
-export const runtime = 'edge';
 export const maxDuration = 10;
 
 const InteractionType = { PING: 1, APPLICATION_COMMAND: 2 } as const;
@@ -27,7 +27,7 @@ const PRICING_BADGE: Record<string, string> = {
   "open-source": "OSS",
 };
 
-// Ed25519 verification using SubtleCrypto (edge-compatible, no dependencies)
+// Ed25519 verification using tweetnacl (pure JS, works everywhere)
 function fromHex(hex: string): Uint8Array {
   const arr = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
@@ -47,23 +47,10 @@ async function verifyDiscordRequest(
 
   try {
     const encoder = new TextEncoder();
-    const publicKeyBytes = fromHex(process.env.DISCORD_APP_PUBLIC_KEY!);
-    const signatureBytes = fromHex(signature);
-    const message = encoder.encode(timestamp + body);
-
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      publicKeyBytes,
-      { name: "Ed25519", namedCurve: "Ed25519" },
-      false,
-      ["verify"]
-    );
-
-    const valid = await crypto.subtle.verify(
-      { name: "Ed25519" },
-      cryptoKey,
-      signatureBytes,
-      message
+    const valid = nacl.sign.detached.verify(
+      encoder.encode(timestamp + body),
+      fromHex(signature),
+      fromHex(process.env.DISCORD_APP_PUBLIC_KEY!)
     );
     return { valid, body };
   } catch (e) {
@@ -142,6 +129,11 @@ async function handleDiscover(query: string, interaction: Record<string, unknown
     type: 5, // DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
     data: { flags: 0 },
   });
+}
+
+// Discord may probe the endpoint with GET during verification
+export async function GET() {
+  return new Response("OK", { status: 200 });
 }
 
 export async function POST(request: Request) {
