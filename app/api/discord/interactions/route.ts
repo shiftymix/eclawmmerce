@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ENTRY_TYPE_CONFIG } from "@/lib/supabase/types";
 
+export const runtime = 'edge';
 export const maxDuration = 10;
 
 const InteractionType = { PING: 1, APPLICATION_COMMAND: 2 } as const;
