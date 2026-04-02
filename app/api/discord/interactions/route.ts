@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { ENTRY_TYPE_CONFIG } from "@/lib/supabase/types";
-import nacl from "tweetnacl";
+import * as nacl from "tweetnacl";
 
 function createServiceClient() {
   return createSupabaseClient(
