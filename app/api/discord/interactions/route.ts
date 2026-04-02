@@ -27,12 +27,13 @@ const PRICING_BADGE: Record<string, string> = {
   "open-source": "OSS",
 };
 
-function hexToUint8Array(hex: string): Uint8Array<ArrayBuffer> {
-  const matches = hex.match(/.{1,2}/g)!;
-  const buf = new ArrayBuffer(matches.length);
-  const view = new Uint8Array(buf);
-  matches.forEach((byte, i) => { view[i] = parseInt(byte, 16); });
-  return view;
+// Ed25519 verification using SubtleCrypto (edge-compatible, no dependencies)
+function fromHex(hex: string): Uint8Array {
+  const arr = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    arr[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+  }
+  return arr;
 }
 
 async function verifyDiscordRequest(
@@ -44,26 +45,29 @@ async function verifyDiscordRequest(
 
   if (!signature || !timestamp) return { valid: false, body };
 
-  const publicKey = process.env.DISCORD_APP_PUBLIC_KEY!;
-
   try {
     const encoder = new TextEncoder();
-    const keyData = hexToUint8Array(publicKey);
+    const publicKeyBytes = fromHex(process.env.DISCORD_APP_PUBLIC_KEY!);
+    const signatureBytes = fromHex(signature);
+    const message = encoder.encode(timestamp + body);
+
     const cryptoKey = await crypto.subtle.importKey(
       "raw",
-      keyData,
-      { name: "Ed25519" },
+      publicKeyBytes,
+      { name: "Ed25519", namedCurve: "Ed25519" },
       false,
       ["verify"]
     );
+
     const valid = await crypto.subtle.verify(
-      "Ed25519",
+      { name: "Ed25519" },
       cryptoKey,
-      hexToUint8Array(signature),
-      encoder.encode(timestamp + body)
+      signatureBytes,
+      message
     );
     return { valid, body };
-  } catch {
+  } catch (e) {
+    console.error("Signature verification error:", e);
     return { valid: false, body };
   }
 }
