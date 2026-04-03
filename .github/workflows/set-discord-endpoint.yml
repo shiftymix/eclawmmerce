@@ -13,7 +13,7 @@ jobs:
             "https://discord.com/api/v10/applications/@me" \
             -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"interactions_endpoint_url": "https://eclawmmerce.ai/api/discord/interactions"}')
+            -d '{"interactions_endpoint_url": "https://www.eclawmmerce.ai/api/discord/interactions"}')
           body=$(echo "$response" | head -1)
           status=$(echo "$response" | tail -1)
           echo "Status: $status"
