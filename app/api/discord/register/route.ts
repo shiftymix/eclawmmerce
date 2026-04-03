@@ -29,7 +29,7 @@ const COMMAND = {
   ],
 };
 
-export async function POST(request: Request) {
+export async function POST() {
   // Auth temporarily removed for one-shot registration use
 
   const appId = process.env.DISCORD_APP_ID!;
