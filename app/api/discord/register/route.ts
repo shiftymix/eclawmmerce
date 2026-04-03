@@ -30,10 +30,7 @@ const COMMAND = {
 };
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  // Auth temporarily removed for one-shot registration use
 
   const appId = process.env.DISCORD_APP_ID!;
   const guildId = "1479805156370677770";
