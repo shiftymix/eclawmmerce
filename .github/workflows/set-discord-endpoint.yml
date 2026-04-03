@@ -1,0 +1,26 @@
+name: Set Discord Interactions Endpoint
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set-endpoint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PATCH Discord interactions endpoint URL
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X PATCH \
+            "https://discord.com/api/v10/applications/@me" \
+            -H "Authorization: Bot ${{ secrets.DISCORD_BOT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"interactions_endpoint_url": "https://eclawmmerce.ai/api/discord/interactions"}')
+          body=$(echo "$response" | head -1)
+          status=$(echo "$response" | tail -1)
+          echo "Status: $status"
+          echo "Body: $body"
+          if [ "$status" = "200" ]; then
+            echo "SUCCESS"
+          else
+            echo "FAILED"
+            exit 1
+          fi
