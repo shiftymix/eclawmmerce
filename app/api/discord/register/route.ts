@@ -5,7 +5,7 @@
 export const maxDuration = 10;
 
 const COMMAND = {
-  name: "eclawm",
+  name: "eclaw",
   description: "Search and discover ecommerce tools on eclawmmerce.ai",
   options: [
     {

@@ -154,7 +154,7 @@ export async function POST(req: Request) {
               Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
             },
             body: JSON.stringify({
-              name: `eclawm: ${(query || "discover").slice(0, 80)}`,
+              name: `eclaw: ${(query || "discover").slice(0, 80)}`,
               auto_archive_duration: 1440,
             }),
           }

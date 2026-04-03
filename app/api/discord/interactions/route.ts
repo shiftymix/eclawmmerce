@@ -149,7 +149,7 @@ export async function POST(request: Request) {
   }
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-    if (interaction.data?.name !== "eclawm") {
+    if (interaction.data?.name !== "eclaw") {
       return ephemeralResponse("Unknown command.");
     }
 
