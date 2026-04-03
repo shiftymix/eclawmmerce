@@ -47,11 +47,14 @@ async function verifyDiscordRequest(
 
   try {
     const encoder = new TextEncoder();
+    const pubKey = process.env.DISCORD_APP_PUBLIC_KEY!;
+    console.log("VERIFY", JSON.stringify({ sigLen: signature.length, tsLen: timestamp.length, bodyLen: body.length, bodyPreview: body.slice(0,50), pubKeyPrefix: pubKey?.slice(0,8) }));
     const valid = nacl.sign.detached.verify(
       encoder.encode(timestamp + body),
       fromHex(signature),
-      fromHex(process.env.DISCORD_APP_PUBLIC_KEY!)
+      fromHex(pubKey)
     );
+    console.log("VERIFY_RESULT", valid);
     return { valid, body };
   } catch (e) {
     console.error("Signature verification error:", e);
